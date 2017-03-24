@@ -344,12 +344,17 @@ public class KernalVersionManager {
         DEXPATCH_VERSION = dexpatchVersion;
         DEXPATCH_BUNDLES = dexPatchBundles;
 
-        parseUpdatedBunldes();
+        parseUpdatedBundles();
     }
 
     public void removeBaseLineInfo(){
-        deleteDirectory(BASELINEINFO_DIR);
-        deleteDirectory(new File(KernalConstants.baseContext.getFilesDir(),"bundleupdate"));
+        if(BASELINEINFO_DIR.exists()) {
+            deleteDirectory(BASELINEINFO_DIR);
+        }
+        File bundleupdate = new File(KernalConstants.baseContext.getFilesDir(),"bundleupdate");
+        if(bundleupdate.exists()) {
+            deleteDirectory(bundleupdate);
+        }
     }
 
     public void deleteDirectory(final File path) {
@@ -416,7 +421,7 @@ public class KernalVersionManager {
         return DEXPATCH_VERSION;
     }
 
-    public synchronized void parseUpdatedBunldes(){
+    public synchronized void parseUpdatedBundles(){
         if(CURRENT_UPDATE_BUNDLES!=null){
             String[] bundles = CURRENT_UPDATE_BUNDLES.split(";");
             if(bundles!=null && bundles.length>0){
@@ -601,14 +606,15 @@ public class KernalVersionManager {
 
     private void killChildProcesses(Context context) {
         try {
+            long uid = context.getApplicationInfo().uid;
             ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             List<ActivityManager.RunningAppProcessInfo> a = am.getRunningAppProcesses();
             for (int i = 0; i < a.size(); i++) {
                 ActivityManager.RunningAppProcessInfo b = a.get(i);
-                if (b.processName.contains(context.getPackageName() + ":")) {
+                if(b.uid == uid && !b.processName.equals(context.getPackageName())){
                     android.os.Process.killProcess(b.pid);
-                    continue;
                 }
+
             }
         } catch (Exception e) {
 

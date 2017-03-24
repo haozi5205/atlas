@@ -220,7 +220,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Build;
-import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.patch.KernalBundle;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.text.TextUtils;
@@ -256,9 +255,6 @@ public class AtlasBridgeApplication extends Application{
         if (!isApplicationNormalCreate(base)) {
             android.os.Process.killProcess(android.os.Process.myPid());
         }
-        if(Build.VERSION.SDK_INT>=24) {
-            replacePathClassLoader();
-        }
         // *0 checkload kernalpatch
         boolean isUpdated = isUpdated(getBaseContext());
         KernalConstants.baseContext = getBaseContext();
@@ -287,6 +283,18 @@ public class AtlasBridgeApplication extends Application{
                         KernalVersionManager.instance().rollbackHardly();
                     }
                     android.os.Process.killProcess(android.os.Process.myPid());
+                }
+                if(Build.VERSION.SDK_INT>=24) {
+                    ClassLoader currentClassLoader = getClassLoader();
+                    replacePathClassLoader();
+                    try {
+                        Class RuntimeVariablesClass = getApplicationContext().getClassLoader().loadClass("android.taobao.atlas.runtime.RuntimeVariables");
+                        Field rawClassLoaderField = RuntimeVariablesClass.getDeclaredField("sRawClassLoader");
+                        rawClassLoaderField.setAccessible(true);
+                        rawClassLoaderField.set(RuntimeVariablesClass,currentClassLoader);
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
                 }
             }else{
                 //remove deprecated info
